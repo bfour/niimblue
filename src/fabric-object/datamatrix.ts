@@ -1,4 +1,4 @@
-import bwipjs from "bwip-js";
+import { encodeToMatrix } from "datamatrix-svg-ts";
 import * as fabric from "fabric";
 import { OBJECT_SIZE_DEFAULTS } from "$/defaults";
 import { CanvasUtils } from "$/utils/canvas_utils";
@@ -64,12 +64,10 @@ export class DataMatrix<
       return;
     }
 
-    let dmData: any;
+    let dmResult: ReturnType<typeof encodeToMatrix>;
 
     try {
-      const res = bwipjs.raw({ bcid: "datamatrix", text: this.text });
-      dmData = res?.[0];
-      if (!dmData || !('pixs' in dmData)) throw new Error("Invalid bwip-js output");
+      dmResult = encodeToMatrix(this.text);
     } catch (e) {
       console.error(e);
       CanvasUtils.renderError(ctx, this.width, this.height);
@@ -77,7 +75,7 @@ export class DataMatrix<
       return;
     }
 
-    const { pixs, pixx, pixy } = dmData;
+    const { matrix, width: pixx, height: pixy } = dmResult;
     
     // Choose scaling factor to map modules to canvas size
     const dmScaleX = Math.floor(this.width / pixx);
@@ -109,7 +107,7 @@ export class DataMatrix<
     
     for (let y = 0; y < pixy; y++) {
       for (let x = 0; x < pixx; x++) {
-        if (pixs[y * pixx + x]) {
+        if (matrix[y][x]) {
           ctx.fillRect(x * dmScale, y * dmScale, dmScale, dmScale);
         }
       }
